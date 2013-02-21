@@ -12,7 +12,12 @@
  *******************************************************************************/
 package org.eclipse.mylyn.internal.github.core.issue;
 
+import static org.eclipse.egit.github.core.client.IGitHubConstants.HOST_API;
+import static org.eclipse.egit.github.core.client.IGitHubConstants.HOST_DEFAULT;
+import static org.eclipse.egit.github.core.client.IGitHubConstants.HOST_GISTS;
+
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -67,7 +72,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * Get repository label for id provider
-	 * 
+	 *
 	 * @param repo
 	 * @return label
 	 */
@@ -77,7 +82,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * Create issue task repository
-	 * 
+	 *
 	 * @param repo
 	 * @param username
 	 * @param password
@@ -100,13 +105,27 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * Create client for repository
-	 * 
+	 *
 	 * @param repository
 	 * @return client
 	 */
 	public static GitHubClient createClient(TaskRepository repository) {
-		GitHubClient client = GitHubClient.createClient(repository
-				.getRepositoryUrl());
+		GitHubClient client = null;
+		try {
+			URL repositoryUrl = new URL(repository.getRepositoryUrl());
+			if ("HTTP".equals(repositoryUrl.getProtocol())) {
+				String host = repositoryUrl.getHost();
+				if (HOST_DEFAULT.equals(host) || HOST_GISTS.equals(host))
+					host = HOST_API;
+				client = new GitHubClient(host, -1, "HTTP");
+			} else {
+				client = GitHubClient.createClient(repository
+						.getRepositoryUrl());
+			}
+		} catch (IOException e) {
+			throw new IllegalArgumentException(e);
+		}
+
 		GitHub.addCredentials(client, repository);
 		return GitHub.configureClient(client);
 	}
@@ -131,7 +150,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * Refresh labels for repository
-	 * 
+	 *
 	 * @param repository
 	 * @return labels
 	 * @throws CoreException
@@ -155,7 +174,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * Get labels for task repository.
-	 * 
+	 *
 	 * @param repository
 	 * @return non-null but possibly empty list of labels
 	 */
@@ -170,7 +189,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * Are there cached labels for the specified task repository?
-	 * 
+	 *
 	 * @param repository
 	 * @return true if contains labels, false otherwise
 	 */
@@ -180,7 +199,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * Refresh milestones for repository
-	 * 
+	 *
 	 * @param repository
 	 * @return milestones
 	 * @throws CoreException
@@ -207,7 +226,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * Get milestones for task repository.
-	 * 
+	 *
 	 * @param repository
 	 * @return non-null but possibly empty list of milestones
 	 */
@@ -222,7 +241,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * Are there cached milestones for the specified task repository?
-	 * 
+	 *
 	 * @param repository
 	 * @return true if contains milestones, false otherwise
 	 */
@@ -232,7 +251,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @return always {@code true}
 	 */
 	@Override
@@ -242,7 +261,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @return always {@code true}
 	 */
 	@Override
@@ -252,7 +271,7 @@ public class IssueConnector extends RepositoryConnector {
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @see #KIND
 	 */
 	@Override
